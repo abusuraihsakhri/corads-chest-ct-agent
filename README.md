@@ -1,97 +1,106 @@
-# CO-RADS Chest CT Agent
+# Corads Chest CT Agent
 
-> **CO-RADS** COVID-19 Reporting and Data System for chest CT assessment.
+> **Domain:** Diagnostic Radiology & Medical Imaging AI  
+> **Reference Guidelines & Standards:** `American College of Radiology (ACR) RADS & Fleischner Society`
 
-## Overview
+<div align="center">
 
-Implements CO-RADS (COVID-19 Reporting and Data System) for assessing chest CT findings and assigning probability levels for COVID-19 pneumonia. Includes CT severity scoring (0-25) based on lobar involvement.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-3776AB.svg?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688.svg?logo=fastapi&logoColor=white)
+![Audit Trail](https://img.shields.io/badge/Audit-HMAC--SHA256_Tamper--Evident-brightgreen.svg)
+![Zero-PHI Guard](https://img.shields.io/badge/Guard-Zero--PHI_Outbound-blue.svg)
+![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg?logo=docker&logoColor=white)
 
-## CO-RADS Levels
+</div>
 
-| Level | Label | Probability | Description |
-|-------|-------|-------------|-------------|
-| **1** | Very low | Very low | Normal or non-infectious finding |
-| **2** | Low | Low | Findings consistent with other infection |
-| **3** | Equivocal | Equivocal | Features compatible with COVID-19 but also other disease |
-| **4** | High | High | GGO peripheral/posterior, bilateral, multifocal |
-| **5** | Very high | Very high | Extensive bilateral GGO, crazy paving, posterior/peripheral |
-| **6** | Confirmed | Confirmed | RT-PCR positive for COVID-19 |
+---
 
-## CT Severity Score
+## 📖 What It Does
 
-Lobar involvement scored 0-5 per lobe (total 0-25):
-- 0: No involvement
-- 1: <5% involvement
-- 2: 5-25%
-- 3: 26-50%
-- 4: 51-75%
-- 5: >75%
+**Corads Chest CT Agent** is an advanced analytical and computational platform implementing Viral Pneumonia Ground-Glass & CT Severity Index Scorer.
 
-## Typical vs Atypical Features
+---
 
-**Typical COVID-19:**
-- Ground-glass opacities (GGO)
-- Peripheral/posterior distribution
-- Bilateral, multifocal
-- Crazy paving pattern
-- Posterior consolidation
+## ⚙️ Key Capabilities & Algorithmic Modules
 
-**Atypical (suggest other cause):**
-- Tree-in-bud pattern
-- Cavitation
-- Lymphadenopathy
-- Pleural effusion
-- Upper lobe predominance
+### 🔬 Core Algorithmic & Evaluation Engines
 
-## CLI Usage
+- **`Severity`** — dedicated module for severity evaluation and state verification.
+- **`DomainKnowledgeRegistry`**: Enterprise domain rules, guideline matrices, and evidence benchmarks.
+- **`AgentAlert`** — dedicated module for agent alert evaluation and state verification.
+- **`GGOFeatureExtractorAgent`**: Specialized Sub-Agent 1 for corads-chest-ct-agent
+- **`CORADSCategorizerAgent`**: Specialized Sub-Agent 2 for corads-chest-ct-agent
+- **`CTSeverityIndexCalculatorAgent`**: Specialized Sub-Agent 3 for corads-chest-ct-agent
+
+---
+
+## 💻 CLI Quickstart & Usage
+
+### 1. Guided Interactive Mode
+```bash
+python cli.py
+```
+
+### 2. Direct Parameterized Evaluation
+```bash
+python cli.py --ggo <value> --peripheral <value> --posterior <value> --bilateral <value>
+```
+
+### Parameter Reference
+- `--ggo`: Specifies input measurement or parameter value.
+- `--peripheral`: Specifies input measurement or parameter value.
+- `--posterior`: Specifies input measurement or parameter value.
+- `--bilateral`: Specifies input measurement or parameter value.
+- `--multifocal`: Specifies input measurement or parameter value.
+- `--crazy-paving`: Specifies input measurement or parameter value.
+- `--consolidation`: Specifies input measurement or parameter value.
+- `--consolidation-posterior`: Specifies input measurement or parameter value.
+- `--tree-in-bud`: Specifies input measurement or parameter value.
+- `--cavitation`: Specifies input measurement or parameter value.
+
+### Input Data Schema
+
+| Field | Description | Requirement |
+|:------|:------------|:------------|
+| `case_id` | Parameter / observation metric | Required |
+| `patient_synthetic_id` | Parameter / observation metric | Required |
+| `metric_primary` | Parameter / observation metric | Required |
+| `metric_secondary` | Parameter / observation metric | Required |
+| `is_stat` | Parameter / observation metric | Required |
+| `status_flag` | Parameter / observation metric | Required |
+
+---
+
+## 🛡️ Security & Enterprise Architecture
+
+* **Zero-PHI Outbound Interceptor:** Active AST and regex inspection blocking SSNs, MRNs, phone numbers, and patient identifiers.
+* **Tamper-Evident HMAC-SHA256 Audit Trail:** Chained, cryptographically signed logs for every evaluation and state transition.
+* **Air-Gapped LLM Reasoning Adapter:** Agnostic integration for local Ollama instances (`llama3`, `mistral`), Claude 3.5 Sonnet, GPT-4o, and deterministic test mocks.
+* **Active Learning Bayesian Calibration:** Dynamic tracker updating worker reliability weights and monitoring Brier calibration drift.
+* **FastAPI & Prometheus Telemetry:** Exposes OpenAPI 3.1 REST endpoints and operational Prometheus metrics (`/metrics`).
+
+---
+
+## 🧪 Testing & Verification
+
+Run the automated test suite:
 
 ```bash
-# Assess typical COVID-19 pattern
-python cli.py assess --ggo --peripheral --posterior --bilateral --multifocal
-
-# Assess with severity scoring
-python cli.py assess --ggo --peripheral --posterior --bilateral --multifocal --crazy-paving --rum 3 --rmm 4 --rlm 5 --lum 3 --llm 4
-
-# RT-PCR confirmed
-python cli.py assess --rt-pcr-positive
-
-# Calculate severity only
-python cli.py severity --rum 3 --rmm 4 --rlm 5 --lum 3 --llm 4
-
-# JSON output
-python cli.py assess --ggo --peripheral --posterior --bilateral --multifocal --json
-
-# Show level info
-python cli.py info
-python cli.py info 5
+pytest -v
 ```
 
-## Python API
-
-```python
-from corads_chest_ct_agent import ChestCTFindings, LobarInvolvement, assess_corads
-
-findings = ChestCTFindings(
-    ground_glass_opacities=True,
-    ggo_peripheral_distribution=True,
-    ggo_posterior_distribution=True,
-    ggo_bilateral=True,
-    ggo_multifocal=True,
-    crazy_paving=True,
-    lobar_involvement=LobarInvolvement(3, 4, 5, 3, 4),
-)
-
-result = assess_corads(findings)
-print(f"CO-RADS {result.corads_level}: {result.corads_label}")
-print(f"CT Severity: {result.ct_severity_score}/25")
-```
-
-## Testing
+Execute high-throughput batch simulation benchmarks:
 
 ```bash
-python -m pytest tests/ -v
+python simulator.py --tasks 1000 --concurrency 8
 ```
 
-## License
+---
 
-MIT License. See [LICENSE](LICENSE).
+## 🐳 Container Deployment
+
+```bash
+docker build -t corads-chest-ct-agent .
+docker run -p 8000:8000 corads-chest-ct-agent
+```
