@@ -262,7 +262,7 @@ class SarcoidosisAndInterstitialLungDiseasePatternRecognitionAgent:
 # 6. 3D VOLUME RENDERING AND SURGICAL PLANNING EXPORT
 # =============================================================================
 @dataclass
-class 3dVolumeRenderingAndSurgicalPlanningExportEngineResult:
+class Engine_3dVolumeRenderingAndSurgicalPlanningExportEngineResult:
     feature_name: str = "3D Volume Rendering and Surgical Planning Export"
     status: str = "OPTIMAL"
     score: float = 0.0
@@ -271,16 +271,16 @@ class 3dVolumeRenderingAndSurgicalPlanningExportEngineResult:
     recommendations: List[str] = field(default_factory=list)
     timestamp: str = field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc).isoformat())
 
-class 3dVolumeRenderingAndSurgicalPlanningExportEngine:
+class Engine_3dVolumeRenderingAndSurgicalPlanningExportEngine:
     """
     3D Volume Rendering and Surgical Planning Export: Build a `SurgicalPlanningExportAgent` that generates 3D surface-rendered models.
     """
     def __init__(self, threshold: float = 1.0, config: Optional[Dict[str, Any]] = None):
         self.threshold = threshold
         self.config = config or {}
-        self.history: List[3dVolumeRenderingAndSurgicalPlanningExportEngineResult] = []
+        self.history: List[Engine_3dVolumeRenderingAndSurgicalPlanningExportEngineResult] = []
 
-    def evaluate(self, primary_value: float, secondary_value: float = 0.0, **kwargs) -> 3dVolumeRenderingAndSurgicalPlanningExportEngineResult:
+    def evaluate(self, primary_value: float, secondary_value: float = 0.0, **kwargs) -> Engine_3dVolumeRenderingAndSurgicalPlanningExportEngineResult:
         alerts = []
         recs = []
         status = "OPTIMAL"
@@ -297,7 +297,7 @@ class 3dVolumeRenderingAndSurgicalPlanningExportEngine:
         else:
             recs.append("Parameters nominal under standard operating bounds.")
 
-        res = 3dVolumeRenderingAndSurgicalPlanningExportEngineResult(
+        res = Engine_3dVolumeRenderingAndSurgicalPlanningExportEngineResult(
             feature_name="3D Volume Rendering and Surgical Planning Export",
             status=status,
             score=score,
@@ -369,7 +369,7 @@ class CoradschestctagentEnrichmentSuite:
         self.lungrads2022nodulema = Lungrads2022NoduleManagementTracker()
         self.automatedcoronaryart = AutomatedCoronaryArteryCalciumScoringCacAgent()
         self.sarcoidosisandinters = SarcoidosisAndInterstitialLungDiseasePatternRecognitionAgent()
-        self.3dvolumerenderingand = 3dVolumeRenderingAndSurgicalPlanningExportEngine()
+        self.engine_3dvolumerenderingand = Engine_3dVolumeRenderingAndSurgicalPlanningExportEngine()
         self.fleischnersociety201 = FleischnerSociety2017FollowupComplianceDashboardEngine()
 
     def execute_all(self, primary_val: float = 1.5, secondary_val: float = 0.5) -> Dict[str, Any]:
@@ -379,7 +379,7 @@ class CoradschestctagentEnrichmentSuite:
         results["Lungrads2022NoduleManagementTracker"] = self.lungrads2022nodulema.evaluate(primary_val, secondary_val)
         results["AutomatedCoronaryArteryCalciumScoringCacAgent"] = self.automatedcoronaryart.evaluate(primary_val, secondary_val)
         results["SarcoidosisAndInterstitialLungDiseasePatternRecognitionAgent"] = self.sarcoidosisandinters.evaluate(primary_val, secondary_val)
-        results["3dVolumeRenderingAndSurgicalPlanningExportEngine"] = self.3dvolumerenderingand.evaluate(primary_val, secondary_val)
+        results["Engine_3dVolumeRenderingAndSurgicalPlanningExportEngine"] = self.engine_3dvolumerenderingand.evaluate(primary_val, secondary_val)
         results["FleischnerSociety2017FollowupComplianceDashboardEngine"] = self.fleischnersociety201.evaluate(primary_val, secondary_val)
         return results
 

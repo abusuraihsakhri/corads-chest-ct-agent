@@ -12,7 +12,7 @@ from enrichment import (
     Lungrads2022NoduleManagementTracker,
     AutomatedCoronaryArteryCalciumScoringCacAgent,
     SarcoidosisAndInterstitialLungDiseasePatternRecognitionAgent,
-    3dVolumeRenderingAndSurgicalPlanningExportEngine,
+    Engine_3dVolumeRenderingAndSurgicalPlanningExportEngine,
     FleischnerSociety2017FollowupComplianceDashboardEngine,
     CoradschestctagentEnrichmentSuite,
     enrichment_suite,
