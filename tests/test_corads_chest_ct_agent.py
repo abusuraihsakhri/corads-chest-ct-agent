@@ -3,8 +3,13 @@ Automated Pytest Test Suite for Corads Chest Ct Agent.
 Domain: Radiology & Neuroimaging Systems
 Standard: ACR RADS / Fleischner Society / ASPECTS Guidelines
 """
+import os
 import sys
 from pathlib import Path
+
+# Set secure audit key for testing before importing agents
+os.environ.setdefault("AUDIT_SECRET_KEY", "test-audit-secret-key-for-pytest-only")
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import pytest
@@ -59,7 +64,7 @@ def test_supervisor_consensus_and_audit():
     # Verify cryptographic audit trail
     assert AuditLogger.verify_integrity() is True
 
-    # CLI tests
-    assert main(["audit", "--task-id", "CLI-TEST-01"]) == 0
-    assert main(["chat", "Explain", "specifications"]) == 0
-    assert main(["verify-audit"]) == 0
+    # CLI tests - using valid commands from cli.py (assess, severity, info)
+    assert main(["assess", "--ggo", "--peripheral", "--posterior", "--bilateral", "--multifocal"]) == 0
+    assert main(["severity", "--rum", "3", "--rmm", "4", "--rlm", "5", "--lum", "3", "--llm", "4"]) == 0
+    assert main(["info"]) == 0

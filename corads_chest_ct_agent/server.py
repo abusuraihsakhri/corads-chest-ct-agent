@@ -1,7 +1,7 @@
 """
 FastAPI REST Application & Webhooks for CO-RADS Sentinel: Pulmonary Viral Pneumonia & Ground-Glass Severity Agent.
 """
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from .models import ClinicalCasePayload
 from .agents import ChestCTCoordinator
 

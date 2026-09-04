@@ -1,9 +1,14 @@
 """
 Distributed Component High-Throughput Traffic & Stress Testing Simulator for Corads Chest Ct Agent.
 """
+import os
 import time
 import random
 import sys
+
+# Ensure audit key is set for simulation runs
+os.environ.setdefault("AUDIT_SECRET_KEY", os.getenv("AUDIT_SECRET_KEY", "corads-chest-ct-agent-master-audit-key-2026"))
+
 from agents.models import SystemTaskPayload
 from agents.supervisor import SystemSupervisor
 from agents.base import PHIGuard, SecurityException, AuditLogger

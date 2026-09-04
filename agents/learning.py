@@ -1,8 +1,7 @@
 """
 Autonomous Bayesian Calibration & Active Learning Feedback Engine for corads-chest-ct-agent.
 """
-import math
-from typing import Dict, Any, List, Optional
+from typing import Dict, List
 from pydantic import BaseModel, Field
 
 class WorkerPerformanceMetric(BaseModel):

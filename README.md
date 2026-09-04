@@ -84,16 +84,28 @@ python cli.py --ggo <value> --peripheral <value> --posterior <value> --bilateral
 
 ## 🧪 Testing & Verification
 
-Run the automated test suite:
+### Prerequisites
+
+Set the `AUDIT_SECRET_KEY` environment variable (required for HMAC-SHA256 audit trail):
+
+```bash
+# Linux/macOS
+export AUDIT_SECRET_KEY=$(python -c "import secrets; print(secrets.token_hex(32))")
+
+# Windows PowerShell
+$env:AUDIT_SECRET_KEY = python -c "import secrets; print(secrets.token_hex(32))"
+```
+
+### Run Tests
 
 ```bash
 pytest -v
 ```
 
-Execute high-throughput batch simulation benchmarks:
+### Execute Simulation Benchmarks
 
 ```bash
-python simulator.py --tasks 1000 --concurrency 8
+python simulator.py 100
 ```
 
 ---
