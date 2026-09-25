@@ -1,70 +1,61 @@
 """
-CO-RADS Engine: COVID-19 Reporting and Data System for chest CT.
+Rule-based CO-RADS chest CT assessment helpers.
 
-Implements CO-RADS assessment levels for chest CT findings suggestive
-of COVID-19 pneumonia.
+CO-RADS is a radiologist reporting scheme, not an autonomous diagnostic
+algorithm. This module provides a deterministic approximation for educational,
+research, and software-testing use from a limited set of structured findings.
 
-Categories:
-  CO-RADS 1: Very low probability (normal or non-infectious)
-  CO-RADS 2: Low probability (infection other than COVID-19)
-  CO-RADS 3: Equivocal/uncertain
-  CO-RADS 4: High probability (typical COVID-19 pattern)
-  CO-RADS 5: Very high probability (extensive typical pattern)
-  CO-RADS 6: RT-PCR confirmed COVID-19
-
-CT Severity Score: Lobar involvement 0-5 per lobe, total 0-25
-
-Reference: CO-RADS (Dutch Radiological Society, 2020)
+Primary reference:
+    Prokop M, et al. Radiology. 2020;296(2):E97-E104.
+    doi:10.1148/radiol.2020201473
 """
-from typing import List, Optional
+from typing import List, Tuple
+
 from .models import CORADSLevel, ChestCTFindings, CORADSResult, LobarInvolvement
 
 
-# Level metadata
 LEVEL_INFO = {
     CORADSLevel.CO_RADS_1: {
-        "label": "Very low probability",
-        "description": "Normal or non-infectious finding.",
+        "label": "Very low suspicion",
+        "description": "Normal CT or findings considered non-infectious.",
         "probability": "Very low",
     },
     CORADSLevel.CO_RADS_2: {
-        "label": "Low probability",
-        "description": "Findings consistent with infection other than COVID-19.",
+        "label": "Low suspicion",
+        "description": "Pulmonary findings typical of infection other than COVID-19.",
         "probability": "Low",
     },
     CORADSLevel.CO_RADS_3: {
-        "label": "Equivocal/uncertain",
-        "description": "Features compatible with COVID-19 but also other disease.",
+        "label": "Equivocal",
+        "description": "Indeterminate findings compatible with COVID-19 and other causes.",
         "probability": "Equivocal",
     },
     CORADSLevel.CO_RADS_4: {
-        "label": "High probability",
-        "description": "Ground-glass opacities in peripheral/posterior distribution, bilateral, multifocal.",
+        "label": "High suspicion",
+        "description": "Suspicious COVID-19 pattern that is not fully typical for CO-RADS 5.",
         "probability": "High",
     },
     CORADSLevel.CO_RADS_5: {
-        "label": "Very high probability",
-        "description": "Extensive bilateral GGO with or without consolidation, crazy paving, posterior/peripheral predominance.",
+        "label": "Very high suspicion",
+        "description": "Typical bilateral multifocal peripheral/subpleural COVID-19 pattern.",
         "probability": "Very high",
     },
     CORADSLevel.CO_RADS_6: {
         "label": "RT-PCR confirmed",
-        "description": "COVID-19 confirmed by RT-PCR.",
+        "description": "SARS-CoV-2 infection confirmed by RT-PCR.",
         "probability": "Confirmed",
     },
 }
 
 
-def _count_typical_features(findings: ChestCTFindings) -> tuple:
-    """Count typical and atypical COVID-19 features. Returns (typical_list, atypical_list)."""
-    typical = []
-    atypical = []
+def _count_features(findings: ChestCTFindings) -> Tuple[List[str], List[str]]:
+    typical: List[str] = []
+    atypical: List[str] = []
 
-    # Typical features
     if findings.ground_glass_opacities:
         typical.append("Ground-glass opacities")
     if findings.ggo_peripheral_distribution:
-        typical.append("Peripheral distribution")
+        typical.append("Peripheral/subpleural distribution")
     if findings.ggo_posterior_distribution:
         typical.append("Posterior distribution")
     if findings.ggo_bilateral:
@@ -77,8 +68,6 @@ def _count_typical_features(findings: ChestCTFindings) -> tuple:
         typical.append("Posterior consolidation")
     if findings.vascular_thickening:
         typical.append("Vascular thickening")
-    if findings.bronchial_wall_thickening:
-        typical.append("Bronchial wall thickening")
     if findings.traction_bronchiectasis:
         typical.append("Traction bronchiectasis")
     if findings.subpleural_lines:
@@ -86,7 +75,6 @@ def _count_typical_features(findings: ChestCTFindings) -> tuple:
     if findings.halo_sign:
         typical.append("Halo sign")
 
-    # Atypical features
     if findings.tree_in_bud:
         atypical.append("Tree-in-bud pattern")
     if findings.cavitation:
@@ -101,54 +89,67 @@ def _count_typical_features(findings: ChestCTFindings) -> tuple:
     return typical, atypical
 
 
-def _is_typical_covid_pattern(findings: ChestCTFindings) -> bool:
-    """Check if findings match typical COVID-19 pattern."""
-    # Typical: GGO + peripheral/posterior + bilateral + multifocal
-    has_ggo = findings.ground_glass_opacities
-    has_peripheral = findings.ggo_peripheral_distribution
-    has_posterior = findings.ggo_posterior_distribution
-    has_bilateral = findings.ggo_bilateral
-    has_multifocal = findings.ggo_multifocal
+def _is_corads5_pattern(findings: ChestCTFindings) -> bool:
+    """Approximate the mandatory CO-RADS 5 distributional pattern.
 
-    return has_ggo and (has_peripheral or has_posterior) and has_bilateral and has_multifocal
+    The structured model uses ``ggo_peripheral_distribution`` as the available
+    proxy for opacities close to visceral pleural surfaces.
+    """
+    return (
+        findings.ground_glass_opacities
+        and findings.ggo_peripheral_distribution
+        and findings.ggo_bilateral
+        and findings.ggo_multifocal
+        and not findings.unilateral
+    )
 
 
-def _is_very_high_pattern(findings: ChestCTFindings) -> bool:
-    """Check if findings match very high probability pattern."""
-    typical = _is_typical_covid_pattern(findings)
-    if not typical:
+def _is_corads4_pattern(findings: ChestCTFindings) -> bool:
+    """Approximate a suspicious but not fully typical CO-RADS 4 pattern."""
+    if not findings.ground_glass_opacities or _is_corads5_pattern(findings):
         return False
 
-    # Very high: extensive + crazy paving or consolidation
-    has_extensive = findings.crazy_paving or (findings.consolidation and findings.consolidation_posterior)
-    has_posterior_periph = findings.ggo_posterior_distribution and findings.ggo_peripheral_distribution
+    supportive = sum(
+        bool(value)
+        for value in (
+            findings.ggo_peripheral_distribution,
+            findings.ggo_posterior_distribution,
+            findings.ggo_bilateral,
+            findings.ggo_multifocal,
+            findings.crazy_paving,
+            findings.consolidation_posterior,
+        )
+    )
+    return supportive >= 2
 
-    return has_extensive and has_posterior_periph
 
-
-def _has_atypical_features(findings: ChestCTFindings) -> bool:
-    """Check for features atypical for COVID-19."""
-    return (findings.tree_in_bud or findings.cavitation or
-            findings.lymphadenopathy or findings.pleural_effusion or
-            findings.upper_lobe_predominance or findings.unilateral)
+def _is_corads2_pattern(findings: ChestCTFindings) -> bool:
+    """Findings more characteristic of another pulmonary infection."""
+    if findings.tree_in_bud or findings.cavitation:
+        return True
+    # The current data model cannot distinguish lobar from organizing-pneumonia
+    # consolidation. Isolated consolidation is therefore treated conservatively
+    # as a non-COVID infectious pattern.
+    return (
+        findings.consolidation
+        and not findings.ground_glass_opacities
+        and not findings.crazy_paving
+    )
 
 
 def assess_corads(findings: ChestCTFindings) -> CORADSResult:
-    """
-    Perform a CO-RADS assessment based on chest CT findings.
+    """Return a deterministic CO-RADS approximation from structured findings.
 
-    Decision logic:
-    1. RT-PCR positive -> CO-RADS 6
-    2. Normal/non-infectious -> CO-RADS 1
-    3. Atypical features suggesting other infection -> CO-RADS 2
-    4. Very high probability pattern -> CO-RADS 5
-    5. Typical COVID-19 pattern -> CO-RADS 4
-    6. Equivocal -> CO-RADS 3
+    This function is decision support only. The original CO-RADS scheme requires
+    interpretation of CT morphology and distribution by a radiologist; this
+    simplified implementation cannot encode every pattern described by Prokop
+    et al.
     """
-    notes: List[str] = []
-    typical, atypical = _count_typical_features(findings)
+    typical, atypical = _count_features(findings)
+    notes: List[str] = [
+        "Rule-based approximation from structured findings; radiologist review is required."
+    ]
 
-    # Calculate CT severity score if lobar involvement provided
     ct_severity = None
     if findings.lobar_involvement is not None:
         errors = findings.lobar_involvement.validate()
@@ -156,96 +157,39 @@ def assess_corads(findings: ChestCTFindings) -> CORADSResult:
             raise ValueError(f"Invalid lobar involvement: {'; '.join(errors)}")
         ct_severity = findings.lobar_involvement.total_score
 
-    # CO-RADS 6: RT-PCR confirmed
     if findings.rt_pcr_positive:
-        info = LEVEL_INFO[CORADSLevel.CO_RADS_6]
-        return CORADSResult(
-            corads_level=6,
-            corads_label=info["label"],
-            description=info["description"],
-            probability=info["probability"],
-            ct_severity_score=ct_severity,
-            typical_features=typical,
-            atypical_features=atypical,
-            notes=["COVID-19 confirmed by RT-PCR."],
-        )
-
-    # CO-RADS 1: Normal or non-infectious
-    if not findings.ground_glass_opacities and not findings.consolidation and not findings.crazy_paving:
-        info = LEVEL_INFO[CORADSLevel.CO_RADS_1]
-        return CORADSResult(
-            corads_level=1,
-            corads_label=info["label"],
-            description=info["description"],
-            probability=info["probability"],
-            ct_severity_score=ct_severity,
-            typical_features=typical,
-            atypical_features=atypical,
-            notes=notes + ["No GGO, consolidation, or crazy paving identified."],
-        )
-
-    # CO-RADS 2: Atypical features suggesting other infection
-    if _has_atypical_features(findings) and not _is_typical_covid_pattern(findings):
-        # If there are atypical features and it doesn't look like COVID
-        if findings.tree_in_bud or findings.cavitation:
-            info = LEVEL_INFO[CORADSLevel.CO_RADS_2]
-            return CORADSResult(
-                corads_level=2,
-                corads_label=info["label"],
-                description=info["description"],
-                probability=info["probability"],
-                ct_severity_score=ct_severity,
-                typical_features=typical,
-                atypical_features=atypical,
-                notes=notes + ["Atypical features suggest non-COVID infection."],
+        level = CORADSLevel.CO_RADS_6
+        notes.append("SARS-CoV-2 infection reported as RT-PCR confirmed.")
+    elif _is_corads5_pattern(findings):
+        level = CORADSLevel.CO_RADS_5
+        if atypical:
+            notes.append(
+                "Atypical co-findings are present; consider mixed or alternative pathology."
             )
+    elif _is_corads4_pattern(findings):
+        level = CORADSLevel.CO_RADS_4
+        if atypical:
+            notes.append(
+                "Atypical co-findings reduce specificity and require clinical correlation."
+            )
+    elif _is_corads2_pattern(findings):
+        level = CORADSLevel.CO_RADS_2
+        notes.append("Pattern contains features more typical of another infection.")
+    elif (
+        findings.ground_glass_opacities
+        or findings.diffuse_bilateral_ggo
+        or findings.crazy_paving
+        or findings.consolidation
+    ):
+        level = CORADSLevel.CO_RADS_3
+        notes.append("Pulmonary opacity pattern is indeterminate in this structured model.")
+    else:
+        level = CORADSLevel.CO_RADS_1
+        notes.append("No modeled infectious opacity pattern identified.")
 
-    # CO-RADS 5: Very high probability
-    if _is_very_high_pattern(findings):
-        info = LEVEL_INFO[CORADSLevel.CO_RADS_5]
-        return CORADSResult(
-            corads_level=5,
-            corads_label=info["label"],
-            description=info["description"],
-            probability=info["probability"],
-            ct_severity_score=ct_severity,
-            typical_features=typical,
-            atypical_features=atypical,
-            notes=notes,
-        )
-
-    # CO-RADS 4: High probability (typical pattern)
-    if _is_typical_covid_pattern(findings):
-        info = LEVEL_INFO[CORADSLevel.CO_RADS_4]
-        return CORADSResult(
-            corads_level=4,
-            corads_label=info["label"],
-            description=info["description"],
-            probability=info["probability"],
-            ct_severity_score=ct_severity,
-            typical_features=typical,
-            atypical_features=atypical,
-            notes=notes,
-        )
-
-    # CO-RADS 3: Equivocal - has some features but not clearly COVID
-    if findings.ground_glass_opacities:
-        info = LEVEL_INFO[CORADSLevel.CO_RADS_3]
-        return CORADSResult(
-            corads_level=3,
-            corads_label=info["label"],
-            description=info["description"],
-            probability=info["probability"],
-            ct_severity_score=ct_severity,
-            typical_features=typical,
-            atypical_features=atypical,
-            notes=notes + ["GGO present but pattern not clearly typical for COVID-19."],
-        )
-
-    # Default: CO-RADS 1 if nothing else matches
-    info = LEVEL_INFO[CORADSLevel.CO_RADS_1]
+    info = LEVEL_INFO[level]
     return CORADSResult(
-        corads_level=1,
+        corads_level=level.value,
         corads_label=info["label"],
         description=info["description"],
         probability=info["probability"],
@@ -257,7 +201,7 @@ def assess_corads(findings: ChestCTFindings) -> CORADSResult:
 
 
 def calculate_severity_score(lobar: LobarInvolvement) -> int:
-    """Calculate CT severity score (0-25) from lobar involvement."""
+    """Calculate the five-lobe CT severity score (0-25)."""
     errors = lobar.validate()
     if errors:
         raise ValueError(f"Invalid lobar involvement: {'; '.join(errors)}")
