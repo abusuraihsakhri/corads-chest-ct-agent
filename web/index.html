@@ -1,236 +1,72 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Corads Chest Ct Engine — Operations Console</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #090d16;
-            --card: #111827;
-            --border: #1f293d;
-            --accent: #3b82f6;
-            --accent-glow: rgba(59, 130, 246, 0.25);
-            --text: #f3f4f6;
-            --text-muted: #9ca3af;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --success: #10b981;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            padding: 2rem;
-            min-height: 100vh;
-        }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        .header-title h1 { font-size: 1.6rem; font-weight: 700; color: #fff; }
-        .header-title p { color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem; }
-        .badge {
-            display: inline-block;
-            padding: 0.3rem 0.8rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            background: var(--accent-glow);
-            color: var(--accent);
-            border: 1px solid var(--accent);
-        }
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr 1.2fr;
-            gap: 1.5rem;
-        }
-        .card {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-        }
-        .card h2 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .form-group { margin-bottom: 1rem; }
-        label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.4rem; }
-        input, select, textarea {
-            width: 100%;
-            padding: 0.65rem 0.9rem;
-            background: #0d1322;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: #fff;
-            font-family: inherit;
-            font-size: 0.9rem;
-        }
-        input:focus, textarea:focus { outline: none; border-color: var(--accent); }
-        .btn {
-            background: var(--accent);
-            color: #fff;
-            border: none;
-            padding: 0.7rem 1.4rem;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-            width: 100%;
-        }
-        .btn:hover { background: #2563eb; }
-        .terminal {
-            background: #060911;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.85rem;
-            color: #10b981;
-            height: 380px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-        }
-        .metrics-bar {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-        .metric-box {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem;
-            text-align: center;
-        }
-        .metric-val { font-size: 1.4rem; font-weight: 700; color: #fff; margin-top: 0.25rem; }
-        .metric-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Browser-based CO-RADS chest CT structured assessment helper and five-lobe CT severity score calculator.">
+  <title>CO-RADS Chest CT Assessment</title>
+  <style>
+    :root { color-scheme: light dark; --bg:#f6f7f9; --panel:#fff; --text:#172033; --muted:#5f6b7a; --border:#d7dce2; --accent:#2458a6; --accent-text:#fff; --notice:#fff8e7; --notice-border:#e4c76b; }
+    @media (prefers-color-scheme: dark) { :root { --bg:#0f141c; --panel:#171e28; --text:#eef2f7; --muted:#aab4c0; --border:#344050; --accent:#76a7ee; --accent-text:#0b1728; --notice:#2b2516; --notice-border:#8a7432; } }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background:var(--bg); color:var(--text); line-height:1.5; }
+    main { width:min(1100px,calc(100% - 2rem)); margin:2rem auto 4rem; }
+    header { margin-bottom:1.5rem; } h1 { margin:0 0 .35rem; font-size:clamp(1.7rem,4vw,2.5rem); } h2 { margin-top:0; font-size:1.15rem; } p { margin:.4rem 0; } .muted { color:var(--muted); }
+    .notice { background:var(--notice); border:1px solid var(--notice-border); border-radius:.65rem; padding:.9rem 1rem; margin:1rem 0 1.5rem; }
+    .layout { display:grid; grid-template-columns:minmax(0,1.3fr) minmax(300px,.7fr); gap:1rem; align-items:start; }
+    .panel { background:var(--panel); border:1px solid var(--border); border-radius:.8rem; padding:1rem; }
+    fieldset { border:1px solid var(--border); border-radius:.65rem; margin:0 0 1rem; padding:.85rem; } legend { font-weight:700; padding:0 .35rem; }
+    .checks { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.55rem .9rem; } label.check { display:flex; gap:.55rem; align-items:flex-start; min-height:2rem; } input[type="checkbox"] { margin-top:.2rem; }
+    .lobes { display:grid; grid-template-columns:1fr auto; gap:.55rem 1rem; align-items:center; }
+    select { min-width:5rem; padding:.35rem .45rem; border:1px solid var(--border); border-radius:.4rem; background:var(--panel); color:var(--text); }
+    button { width:100%; border:0; border-radius:.55rem; padding:.8rem 1rem; background:var(--accent); color:var(--accent-text); font-weight:700; cursor:pointer; }
+    button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible { outline:3px solid var(--accent); outline-offset:2px; }
+    .result-main { font-size:1.6rem; font-weight:800; margin-bottom:.25rem; } .score { display:inline-block; margin:.7rem 0; padding:.25rem .55rem; border:1px solid var(--border); border-radius:.45rem; font-weight:700; }
+    ul { padding-left:1.2rem; } .references { margin-top:1rem; font-size:.92rem; } a { color:var(--accent); }
+    @media (max-width:760px) { main { width:min(100% - 1rem,1100px); margin-top:1rem; } .layout { grid-template-columns:1fr; } .checks { grid-template-columns:1fr; } }
+  </style>
 </head>
 <body>
-
-    <div class="header">
-        <div class="header-title">
-            <h1>Corads Chest Ct Engine</h1>
-            <p>Domain: Clinical & Cryptographic AI | Standard: CAP / CLSI / NIST Standards | LabMind-Atlas Architecture</p>
-        </div>
-        <div>
-            <span class="badge">Air-Gapped Active</span>
-            <span class="badge" style="background: rgba(16,185,129,0.2); color: #10b981; border-color: #10b981;">Zero-PHI Guard Active</span>
-        </div>
-    </div>
-
-    <div class="metrics-bar">
-        <div class="metric-box">
-            <div class="metric-label">System Status</div>
-            <div class="metric-val" style="color: var(--success);" id="m-status">OPTIMAL</div>
-        </div>
-        <div class="metric-box">
-            <div class="metric-label">Tasks Processed</div>
-            <div class="metric-val" id="m-tasks">142</div>
-        </div>
-        <div class="metric-box">
-            <div class="metric-label">Audit Blocks Signed</div>
-            <div class="metric-val" id="m-audit">142</div>
-        </div>
-        <div class="metric-box">
-            <div class="metric-label">PHI Interceptions</div>
-            <div class="metric-val" style="color: var(--accent);" id="m-phi">0</div>
-        </div>
-    </div>
-
-    <div class="grid">
-        <div class="card">
-            <h2>⚙️ Dispatch Distributed Component Audit</h2>
-            <div class="form-group">
-                <label>Task / Sample ID</label>
-                <input type="text" id="task_id" value="TASK-2026-LIVE-01">
-            </div>
-            <div class="form-group">
-                <label>Target Identifier</label>
-                <input type="text" id="target_id" value="SPECIMEN-ALPHA-77">
-            </div>
-            <div class="form-group">
-                <label>Primary Measurement / Value</label>
-                <input type="number" id="primary_metric" value="29.4" step="0.1">
-            </div>
-            <div class="form-group">
-                <label>Secondary Metric / Kinetic Index</label>
-                <input type="number" id="secondary_metric" value="14.8" step="0.1">
-            </div>
-            <div class="form-group">
-                <label>Status / Phenotype Descriptor</label>
-                <input type="text" id="status_descriptor" value="DISCORDANT_ANOMALY">
-            </div>
-            <div class="form-group">
-                <label><input type="checkbox" id="is_critical" checked> Trigger Emergency / Critical Flag</label>
-            </div>
-            <button class="btn" onclick="runAudit()">Execute Distributed Component Audit</button>
-        </div>
-
-        <div class="card">
-            <h2>📊 Real-Time Consensus Dossier & Audit Log</h2>
-            <div class="terminal" id="outputConsole">// Corads Chest Ct Engine Operations Console Ready
-// Connection established with Air-Gapped Supervisor
-// Cryptographic HMAC-SHA256 audit ledger loaded.
-// Ready for live task payload dispatch...</div>
-        </div>
-    </div>
-
-    <script>
-        async function runAudit() {
-            const consoleEl = document.getElementById('outputConsole');
-            consoleEl.innerText = "// Dispatching task across specialized workers...
-// Invoking InvariantQCWorker, SafetyEscalationWorker, ProtocolWorker...";
-
-            const payload = {
-                task_id: document.getElementById('task_id').value,
-                target_identifier: document.getElementById('target_id').value,
-                primary_metric: parseFloat(document.getElementById('primary_metric').value),
-                secondary_metric: parseFloat(document.getElementById('secondary_metric').value),
-                status_descriptor: document.getElementById('status_descriptor').value,
-                is_critical_flag: document.getElementById('is_critical').checked
-            };
-
-            try {
-                const res = await fetch('/api/audit', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const data = await res.json();
-                consoleEl.innerText = JSON.stringify(data, null, 2);
-                document.getElementById('m-tasks').innerText = parseInt(document.getElementById('m-tasks').innerText) + 1;
-                document.getElementById('m-audit').innerText = parseInt(document.getElementById('m-audit').innerText) + 1;
-            } catch (err) {
-                consoleEl.innerText = "// Offline / Simulation Output:\n" + JSON.stringify({
-                    dossier_id: "DOSSIER-SIM-" + Math.floor(Math.random()*10000),
-                    system: "corads-chest-ct-engine",
-                    domain: "Clinical & Cryptographic AI",
-                    task_id: payload.task_id,
-                    overall_urgency: payload.is_critical_flag ? "CRITICAL_STAT_PANIC" : "ELEVATED_RISK",
-                    integrity_status: "DISCORDANT_ANOMALY",
-                    alerts: [
-                        { worker: "InvariantQCWorker", alert: "Primary metric exceeds upper reference bound" },
-                        { worker: "SafetyEscalationWorker", alert: "Critical emergency interlock flag active" }
-                    ],
-                    audit_hash: "HMAC_SHA256_e83f9a72b941d6c381f9"
-                }, null, 2);
-            }
-        }
-    </script>
+<main>
+  <header><h1>CO-RADS Chest CT Assessment</h1><p class="muted">Structured rule-based helper with a five-lobe CT severity score (0–25).</p></header>
+  <div class="notice"><strong>Research/educational use only.</strong> CO-RADS is a radiologist reporting scheme. This browser tool is a deterministic approximation from a limited set of structured findings and is not a diagnostic device. Do not enter patient identifiers. All calculations run locally in the browser.</div>
+  <div class="layout">
+    <form id="assessment-form" class="panel">
+      <fieldset><legend>CT findings</legend><div class="checks">
+        <label class="check"><input id="ggo" type="checkbox">Ground-glass opacities</label>
+        <label class="check"><input id="peripheral" type="checkbox">Peripheral/subpleural distribution</label>
+        <label class="check"><input id="posterior" type="checkbox">Posterior distribution</label>
+        <label class="check"><input id="bilateral" type="checkbox">Bilateral involvement</label>
+        <label class="check"><input id="multifocal" type="checkbox">Multifocal involvement</label>
+        <label class="check"><input id="crazyPaving" type="checkbox">Crazy paving</label>
+        <label class="check"><input id="consolidation" type="checkbox">Consolidation</label>
+        <label class="check"><input id="posteriorConsolidation" type="checkbox">Posterior consolidation</label>
+        <label class="check"><input id="treeInBud" type="checkbox">Tree-in-bud</label>
+        <label class="check"><input id="cavitation" type="checkbox">Cavitation</label>
+        <label class="check"><input id="lymphadenopathy" type="checkbox">Lymphadenopathy</label>
+        <label class="check"><input id="pleuralEffusion" type="checkbox">Pleural effusion</label>
+        <label class="check"><input id="diffuseBilateralGgo" type="checkbox">Diffuse bilateral GGO</label>
+        <label class="check"><input id="unilateral" type="checkbox">Predominantly unilateral</label>
+        <label class="check"><input id="pcrPositive" type="checkbox">RT-PCR reported positive</label>
+      </div></fieldset>
+      <fieldset><legend>Five-lobe CT severity score</legend><p class="muted">0 = none; 1 = &lt;5%; 2 = 5–25%; 3 = 26–50%; 4 = 51–75%; 5 = &gt;75% involvement.</p><div class="lobes">
+        <label for="ru">Right upper lobe</label><select id="ru"></select>
+        <label for="rm">Right middle lobe</label><select id="rm"></select>
+        <label for="rl">Right lower lobe</label><select id="rl"></select>
+        <label for="lu">Left upper lobe</label><select id="lu"></select>
+        <label for="ll">Left lower lobe</label><select id="ll"></select>
+      </div></fieldset>
+      <button type="submit">Calculate assessment</button>
+    </form>
+    <section class="panel" aria-live="polite" aria-labelledby="result-heading">
+      <h2 id="result-heading">Result</h2><div id="result"><p class="muted">Select findings and calculate the assessment.</p></div>
+      <div class="references"><strong>References</strong><ul>
+        <li><a href="https://doi.org/10.1148/radiol.2020201473" rel="noopener noreferrer">Prokop et al., Radiology 2020 — original CO-RADS scheme</a></li>
+        <li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC7334627/" rel="noopener noreferrer">Five-lobe 0–25 CT severity score description</a></li>
+      </ul></div>
+    </section>
+  </div>
+</main>
+<script src="app.js"></script>
 </body>
 </html>
