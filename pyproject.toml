@@ -8,11 +8,10 @@ version = "2.1.0"
 description = "Rule-based CO-RADS chest CT assessment and five-lobe CT severity scoring helpers"
 readme = "README.md"
 requires-python = ">=3.9"
-license = { text = "MIT" }
+license = "MIT"
 authors = [{ name = "Dr. Abu Suraih Sakhri" }]
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Topic :: Scientific/Engineering :: Medical Science Apps.",
 ]
@@ -28,6 +27,7 @@ test = [
     "pydantic>=2.7,<3",
     "pytest>=8,<10",
 ]
+legacy = ["pydantic>=2.7,<3"]
 
 [project.scripts]
 corads-chest-ct-agent = "corads_chest_ct_agent.cli:main"
@@ -35,3 +35,7 @@ corads-chest-ct-agent = "corads_chest_ct_agent.cli:main"
 [project.urls]
 Homepage = "https://github.com/abusuraihsakhri/corads-chest-ct-agent"
 Repository = "https://github.com/abusuraihsakhri/corads-chest-ct-agent.git"
+
+[tool.setuptools.packages.find]
+include = ["corads_chest_ct_agent*", "agents*"]
+exclude = ["tests*", "web*"]
