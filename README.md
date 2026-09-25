@@ -1,5 +1,7 @@
 # CO-RADS Chest CT Agent
 
+### [Open the Live Application →](https://abusuraihsakhri.github.io/corads-chest-ct-agent/)
+
 A small, deterministic implementation of structured CO-RADS decision support plus a five-lobe CT severity score (0–25).
 
 > **Important:** CO-RADS is a radiologist reporting scheme. This repository provides a simplified rule-based approximation for research, education, and software testing. It is not a diagnostic device and does not replace CT interpretation, microbiologic testing, or clinical judgment.
