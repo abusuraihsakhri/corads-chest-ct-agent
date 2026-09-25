@@ -1,118 +1,162 @@
-"""
-Command-Line Interface for CO-RADS Sentinel: Pulmonary Viral Pneumonia & Ground-Glass Severity Agent.
-"""
+"""Command-line interface for the CO-RADS chest CT assessment helpers."""
 import argparse
-import csv
 import json
 import sys
-from .models import ClinicalCasePayload
-from .agents import ChestCTCoordinator
 
-coordinator = ChestCTCoordinator()
+from .engine import LEVEL_INFO, assess_corads, calculate_severity_score
+from .models import CORADSLevel, ChestCTFindings, LobarInvolvement
 
 
-def main(argv=None):
-    parser = argparse.ArgumentParser(prog="corads-chest-ct-agent", description="CO-RADS Sentinel: Pulmonary Viral Pneumonia & Ground-Glass Severity Agent")
+def _lobar_from_args(args: argparse.Namespace) -> LobarInvolvement:
+    return LobarInvolvement(
+        right_upper=args.rum,
+        right_middle=args.rmm,
+        right_lower=args.rlm,
+        left_upper=args.lum,
+        left_lower=args.llm,
+    )
+
+
+def main(argv=None) -> int:
+    parser = argparse.ArgumentParser(
+        prog="corads-chest-ct-agent",
+        description=(
+            "Rule-based CO-RADS chest CT assessment helper. "
+            "For educational/research use; radiologist interpretation is required."
+        ),
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    # Audit
-    p_audit = subparsers.add_parser("audit", help="Run single case clinical audit")
-    p_audit.add_argument("--case-id", default="CASE-2026-001")
-    p_audit.add_argument("--primary", type=float, default=26.2)
-    p_audit.add_argument("--secondary", type=float, default=12.5)
-    p_audit.add_argument("--stat", action="store_true")
-    p_audit.add_argument("--status", default="DISCORDANT")
+    p_assess = subparsers.add_parser("assess", help="Assess structured chest CT findings")
+    p_assess.add_argument("--ggo", action="store_true", help="Ground-glass opacities present")
+    p_assess.add_argument("--peripheral", action="store_true", help="Peripheral/subpleural distribution")
+    p_assess.add_argument("--posterior", action="store_true", help="Posterior distribution")
+    p_assess.add_argument("--bilateral", action="store_true", help="Bilateral involvement")
+    p_assess.add_argument("--multifocal", action="store_true", help="Multifocal involvement")
+    p_assess.add_argument("--crazy-paving", action="store_true", help="Crazy paving pattern")
+    p_assess.add_argument("--consolidation", action="store_true", help="Consolidation present")
+    p_assess.add_argument(
+        "--consolidation-posterior",
+        action="store_true",
+        help="Posterior consolidation",
+    )
+    p_assess.add_argument("--tree-in-bud", action="store_true", help="Tree-in-bud pattern")
+    p_assess.add_argument("--cavitation", action="store_true", help="Cavitation")
+    p_assess.add_argument("--lymphadenopathy", action="store_true", help="Lymphadenopathy")
+    p_assess.add_argument("--pleural-effusion", action="store_true", help="Pleural effusion")
+    p_assess.add_argument(
+        "--diffuse-bilateral-ggo",
+        action="store_true",
+        help="Diffuse bilateral GGO without a classic peripheral pattern",
+    )
+    p_assess.add_argument("--unilateral", action="store_true", help="Predominantly unilateral distribution")
+    p_assess.add_argument(
+        "--rt-pcr-positive",
+        action="store_true",
+        help="SARS-CoV-2 RT-PCR reported positive",
+    )
+    for flag, label in (
+        ("rum", "Right upper lobe"),
+        ("rmm", "Right middle lobe"),
+        ("rlm", "Right lower lobe"),
+        ("lum", "Left upper lobe"),
+        ("llm", "Left lower lobe"),
+    ):
+        p_assess.add_argument(f"--{flag}", type=int, default=0, help=f"{label} score (0-5)")
+    p_assess.add_argument("--json", action="store_true", help="Output JSON")
 
-    # Chat
-    p_chat = subparsers.add_parser("chat", help="System configuration query")
-    p_chat.add_argument("query", nargs="+")
+    p_severity = subparsers.add_parser("severity", help="Calculate the five-lobe CT severity score")
+    for flag, label in (
+        ("rum", "Right upper lobe"),
+        ("rmm", "Right middle lobe"),
+        ("rlm", "Right lower lobe"),
+        ("lum", "Left upper lobe"),
+        ("llm", "Left lower lobe"),
+    ):
+        p_severity.add_argument(f"--{flag}", type=int, required=True, help=f"{label} score (0-5)")
 
-    # Batch
-    p_batch = subparsers.add_parser("batch", help="Batch process CSV records")
-    p_batch.add_argument("-i", "--input", required=True)
-    p_batch.add_argument("-o", "--output", default="results.csv")
-
-    # Serve
-    p_serve = subparsers.add_parser("serve", help="Launch FastAPI REST server")
-    p_serve.add_argument("--host", default="127.0.0.1")
-    p_serve.add_argument("--port", type=int, default=8000)
+    p_info = subparsers.add_parser("info", help="Show CO-RADS level information")
+    p_info.add_argument("level", nargs="?", type=int, default=None, help="Level (1-6)")
 
     args = parser.parse_args(argv)
 
-    if args.command == "audit":
-        case = ClinicalCasePayload(
-            case_id=args.case_id,
-            patient_synthetic_id="SYNTH-PT-881",
-            primary_metric=args.primary,
-            secondary_metric=args.secondary,
-            status_flag=args.status,
-            is_stat=args.stat,
+    if args.command == "assess":
+        lobar = _lobar_from_args(args)
+        findings = ChestCTFindings(
+            ground_glass_opacities=args.ggo,
+            ggo_peripheral_distribution=args.peripheral,
+            ggo_posterior_distribution=args.posterior,
+            ggo_bilateral=args.bilateral,
+            ggo_multifocal=args.multifocal,
+            crazy_paving=args.crazy_paving,
+            consolidation=args.consolidation,
+            consolidation_posterior=args.consolidation_posterior,
+            tree_in_bud=args.tree_in_bud,
+            cavitation=args.cavitation,
+            lymphadenopathy=args.lymphadenopathy,
+            pleural_effusion=args.pleural_effusion,
+            diffuse_bilateral_ggo=args.diffuse_bilateral_ggo,
+            unilateral=args.unilateral,
+            rt_pcr_positive=args.rt_pcr_positive,
+            lobar_involvement=lobar,
         )
-        dossier = coordinator.process_case(case)
-        print("=" * 80)
-        print(f"  CO-RADS SENTINEL: PULMONARY VIRAL PNEUMONIA & GROUND-GLASS SEVERITY AGENT")
-        print(f"  Domain: Thoracic Radiology | Standard: ACR Lung-RADS v2022 & Fleischner Society 2017")
-        print(f"  Case: {dossier['case_id']} | Status: [{dossier['overall_status']}] | Total Alerts: {dossier['total_alerts']}")
-        print("=" * 80)
-        for a in dossier["alerts"]:
-            print(f"\n  [{a['urgency']}] from {a['sub_agent']}:")
-            print(f"  Title: {a['title']}")
-            print(f"  Finding: {a['clinical_finding']}")
-            print(f"  Action: {a['actionable_recommendation']}")
-        print("\n" + "=" * 80)
-        return 0
-
-    if args.command == "chat":
-        ans = coordinator.query_supervisory_chat(" ".join(args.query))
-        print(f"\n[ChestCTCoordinator]:\n{ans}\n")
-        return 0
-
-    if args.command == "batch":
-        with open(args.input, mode="r", encoding="utf-8-sig") as f:
-            reader = csv.DictReader(f)
-            fieldnames = list(reader.fieldnames or [])
-            rows = list(reader)
-
-        out_fields = fieldnames + ["overall_status", "total_alerts", "stat_critical_alerts", "consensus_summary"]
-        out_rows = []
-        for r in rows:
-            case = ClinicalCasePayload(
-                case_id=r.get("case_id", "CASE-01"),
-                patient_synthetic_id=r.get("patient_synthetic_id", "SYNTH-01"),
-                primary_metric=float(r.get("metric_primary", r.get("primary_metric", 15.0))),
-                secondary_metric=float(r.get("metric_secondary", r.get("secondary_metric", 5.0))),
-                status_flag=r.get("status_flag", r.get("status_text", "NORMAL")),
-                is_stat=bool(r.get("is_stat", r.get("critical_flag", False))),
-            )
-            dossier = coordinator.process_case(case)
-            row_dict = dict(r)
-            row_dict["overall_status"] = dossier["overall_status"]
-            row_dict["total_alerts"] = dossier["total_alerts"]
-            row_dict["stat_critical_alerts"] = dossier["stat_critical_alerts"]
-            row_dict["consensus_summary"] = dossier["consensus_summary"]
-            out_rows.append(row_dict)
-
-        with open(args.output, mode="w", encoding="utf-8", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=out_fields)
-            writer.writeheader()
-            writer.writerows(out_rows)
-        print(f"Batch processed {len(out_rows)} records -> {args.output}")
-        return 0
-
-    if args.command == "serve":
         try:
-            import uvicorn
-            from .server import create_app
-            app = create_app()
-            if app:
-                print(f"Starting CO-RADS Sentinel: Pulmonary Viral Pneumonia & Ground-Glass Severity Agent on http://{args.host}:{args.port}")
-                uvicorn.run(app, host=args.host, port=args.port)
-        except ImportError:
-            print("FastAPI / uvicorn not installed. Run 'pip install fastapi uvicorn'")
-            return 1
+            result = assess_corads(findings)
+        except ValueError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
+
+        if args.json:
+            print(json.dumps(result.to_dict(), indent=2))
+            return 0
+
+        print("=" * 64)
+        print(f"CO-RADS {result.corads_level} — {result.corads_label}")
+        print(f"Suspicion: {result.probability}")
+        print(result.description)
+        if result.ct_severity_score is not None:
+            print(f"CT severity score: {result.ct_severity_score}/25")
+        if result.typical_features:
+            print("Typical/suspicious features: " + ", ".join(result.typical_features))
+        if result.atypical_features:
+            print("Atypical features: " + ", ".join(result.atypical_features))
+        for note in result.notes:
+            print(f"Note: {note}")
+        print("=" * 64)
+        return 0
+
+    if args.command == "severity":
+        try:
+            score = calculate_severity_score(_lobar_from_args(args))
+        except ValueError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
+        print(f"CT Severity Score: {score}/25")
+        return 0
+
+    if args.command == "info":
+        if args.level is not None:
+            try:
+                level = CORADSLevel(args.level)
+            except ValueError:
+                print(f"Invalid level: {args.level}. Must be 1-6.", file=sys.stderr)
+                return 2
+            info = LEVEL_INFO[level]
+            print(f"CO-RADS {level.value}: {info['label']}")
+            print(f"  {info['description']}")
+            print(f"  Suspicion: {info['probability']}")
+            return 0
+
+        for level in CORADSLevel:
+            info = LEVEL_INFO[level]
+            print(f"CO-RADS {level.value}: {info['label']}")
+            print(f"  {info['description']}")
+            print(f"  Suspicion: {info['probability']}")
+            print()
+        return 0
 
     return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    raise SystemExit(main())
