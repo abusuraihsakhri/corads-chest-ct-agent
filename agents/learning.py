@@ -1,8 +1,7 @@
-"""
-Autonomous Bayesian Calibration & Active Learning Feedback Engine for corads-chest-ct-agent.
-"""
-from typing import Dict, List
-from pydantic import BaseModel, Field
+"""Simple feedback calibration helpers for the optional agent subsystem."""
+from typing import Any, Dict, List
+
+from pydantic import BaseModel
 
 class WorkerPerformanceMetric(BaseModel):
     worker_name: str
@@ -12,8 +11,6 @@ class WorkerPerformanceMetric(BaseModel):
     dynamic_weight: float = 1.0
 
 class ActiveLearningEngine:
-    """Continuously refines sub-agent voting weights based on consensus feedback."""
-
     def __init__(self, system_name: str = "Corads Chest Ct Agent"):
         self.system_name = system_name
         self.worker_metrics: Dict[str, WorkerPerformanceMetric] = {
@@ -23,27 +20,19 @@ class ActiveLearningEngine:
         }
         self.uncertainty_buffer: List[Dict[str, Any]] = []
 
-    def record_feedback(self, worker_name: str, was_concordant: bool, confidence_score: float):
+    def record_feedback(self, worker_name: str, was_concordant: bool, confidence_score: float) -> None:
         if worker_name not in self.worker_metrics:
             self.worker_metrics[worker_name] = WorkerPerformanceMetric(worker_name=worker_name)
-        m = self.worker_metrics[worker_name]
-        m.total_evaluations += 1
+        metric = self.worker_metrics[worker_name]
+        metric.total_evaluations += 1
         if was_concordant:
-            m.concordant_decisions += 1
-        
-        # Update dynamic Bayesian reliability weight
-        acc = m.concordant_decisions / max(1, m.total_evaluations)
-        m.dynamic_weight = round(max(0.2, min(2.0, acc * 1.5)), 3)
-
-        # Flag borderline cases for offline active learning review
+            metric.concordant_decisions += 1
+        accuracy = metric.concordant_decisions / max(1, metric.total_evaluations)
+        metric.dynamic_weight = round(max(0.2, min(2.0, accuracy * 1.5)), 3)
         if 0.45 <= confidence_score <= 0.65:
-            self.uncertainty_buffer.append({
-                "worker": worker_name,
-                "confidence": confidence_score,
-                "concordant": was_concordant
-            })
+            self.uncertainty_buffer.append({"worker": worker_name, "confidence": confidence_score, "concordant": was_concordant})
 
     def get_calibrated_weights(self) -> Dict[str, float]:
-        return {k: v.dynamic_weight for k, v in self.worker_metrics.items()}
+        return {worker: metric.dynamic_weight for worker, metric in self.worker_metrics.items()}
 
 GLOBAL_LEARNING_ENGINE = ActiveLearningEngine()
