@@ -1,115 +1,12 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Corads Chest Ct Engine API",
-    "description": "Enterprise Distributed Component Platform (Clinical & Cryptographic AI) adhering to CAP / CLSI / NIST Standards.",
-    "version": "3.0.0-ENTERPRISE",
-    "contact": {
-      "name": "Dr. Abu Suraih Sakhri",
-      "url": "https://github.com/abusuraihsakhri"
-    }
+    "title": "CO-RADS Chest CT Agent API",
+    "version": "2.1.0",
+    "description": "Structured rule-based CO-RADS decision support for research and educational use. Radiologist interpretation is required."
   },
   "paths": {
-    "/health": {
-      "get": {
-        "summary": "Health and metadata check",
-        "responses": {
-          "200": {
-            "description": "System optimal"
-          }
-        }
-      }
-    },
-    "/metrics": {
-      "get": {
-        "summary": "Prometheus operational metrics",
-        "responses": {
-          "200": {
-            "description": "Prometheus text metrics"
-          }
-        }
-      }
-    },
-    "/api/audit": {
-      "post": {
-        "summary": "Dispatch task payload across specialized workers",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "task_id": {
-                    "type": "string"
-                  },
-                  "target_identifier": {
-                    "type": "string"
-                  },
-                  "primary_metric": {
-                    "type": "number"
-                  },
-                  "secondary_metric": {
-                    "type": "number"
-                  },
-                  "status_descriptor": {
-                    "type": "string"
-                  },
-                  "is_critical_flag": {
-                    "type": "boolean"
-                  }
-                },
-                "required": [
-                  "task_id",
-                  "target_identifier",
-                  "primary_metric"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Consensus dossier with HMAC signature"
-          }
-        }
-      }
-    },
-    "/api/chat": {
-      "post": {
-        "summary": "Air-gapped supervisory conversational assistant",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "query": {
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "query"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Supervisory response"
-          }
-        }
-      }
-    },
-    "/api/audit/logs": {
-      "get": {
-        "summary": "Retrieve and cryptographically verify HMAC audit trail",
-        "responses": {
-          "200": {
-            "description": "Cryptographic audit trail"
-          }
-        }
-      }
-    }
+    "/health": {"get": {"summary": "Health check", "responses": {"200": {"description": "Service status"}}}},
+    "/api/assess": {"post": {"summary": "Assess structured chest CT findings", "requestBody": {"required": true, "content": {"application/json": {"schema": {"type": "object", "properties": {"ground_glass_opacities":{"type":"boolean","default":false},"ggo_peripheral_distribution":{"type":"boolean","default":false},"ggo_posterior_distribution":{"type":"boolean","default":false},"ggo_bilateral":{"type":"boolean","default":false},"ggo_multifocal":{"type":"boolean","default":false},"crazy_paving":{"type":"boolean","default":false},"consolidation":{"type":"boolean","default":false},"consolidation_posterior":{"type":"boolean","default":false},"tree_in_bud":{"type":"boolean","default":false},"cavitation":{"type":"boolean","default":false},"lymphadenopathy":{"type":"boolean","default":false},"pleural_effusion":{"type":"boolean","default":false},"diffuse_bilateral_ggo":{"type":"boolean","default":false},"unilateral":{"type":"boolean","default":false},"rt_pcr_positive":{"type":"boolean","default":false},"right_upper":{"type":["integer","null"],"minimum":0,"maximum":5},"right_middle":{"type":["integer","null"],"minimum":0,"maximum":5},"right_lower":{"type":["integer","null"],"minimum":0,"maximum":5},"left_upper":{"type":["integer","null"],"minimum":0,"maximum":5},"left_lower":{"type":["integer","null"],"minimum":0,"maximum":5}}}}}}, "responses": {"200":{"description":"CO-RADS approximation and optional CT severity score"},"422":{"description":"Input validation error"}}}}
   }
 }

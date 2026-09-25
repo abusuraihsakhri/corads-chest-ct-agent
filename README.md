@@ -1,118 +1,109 @@
-# Corads Chest CT Agent
+# CO-RADS Chest CT Agent
 
-> **Domain:** Diagnostic Radiology & Medical Imaging AI  
-> **Reference Guidelines & Standards:** `American College of Radiology (ACR) RADS & Fleischner Society`
+A small, deterministic implementation of structured CO-RADS decision support plus a five-lobe CT severity score (0–25).
 
-<div align="center">
+> **Important:** CO-RADS is a radiologist reporting scheme. This repository provides a simplified rule-based approximation for research, education, and software testing. It is not a diagnostic device and does not replace CT interpretation, microbiologic testing, or clinical judgment.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-3776AB.svg?logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688.svg?logo=fastapi&logoColor=white)
-![Audit Trail](https://img.shields.io/badge/Audit-HMAC--SHA256_Tamper--Evident-brightgreen.svg)
-![Zero-PHI Guard](https://img.shields.io/badge/Guard-Zero--PHI_Outbound-blue.svg)
-![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg?logo=docker&logoColor=white)
+## What it provides
 
-</div>
+- CO-RADS 1–5 structured suspicion categories with CO-RADS 6 for reported RT-PCR confirmation.
+- Five-lobe semiquantitative CT severity scoring from 0 to 25.
+- Python API and command-line interface.
+- Optional FastAPI service.
+- Static browser application that performs calculations locally and is suitable for GitHub Pages.
+- Automated tests across supported Python versions.
 
----
+The CO-RADS rules are based on the original Dutch Radiological Society publication by Prokop et al. The browser and Python implementations intentionally use the same limited structured feature set; they cannot represent every morphology or distributional nuance in the original scheme.
 
-## 📖 What It Does
+## Browser application
 
-**Corads Chest CT Agent** is an advanced analytical and computational platform implementing Viral Pneumonia Ground-Glass & CT Severity Index Scorer.
+Open `web/index.html` directly in a modern browser, or serve the `web/` directory with any static HTTP server. No server-side Python is required and no data is transmitted by the application itself.
 
----
+Do not enter patient identifiers. The browser interface intentionally contains no patient-identity fields.
 
-## ⚙️ Key Capabilities & Algorithmic Modules
-
-### 🔬 Core Algorithmic & Evaluation Engines
-
-- **`Severity`** — dedicated module for severity evaluation and state verification.
-- **`DomainKnowledgeRegistry`**: Enterprise domain rules, guideline matrices, and evidence benchmarks.
-- **`AgentAlert`** — dedicated module for agent alert evaluation and state verification.
-- **`GGOFeatureExtractorAgent`**: Specialized Sub-Agent 1 for corads-chest-ct-agent
-- **`CORADSCategorizerAgent`**: Specialized Sub-Agent 2 for corads-chest-ct-agent
-- **`CTSeverityIndexCalculatorAgent`**: Specialized Sub-Agent 3 for corads-chest-ct-agent
-
----
-
-## 💻 CLI Quickstart & Usage
-
-### 1. Guided Interactive Mode
-```bash
-python cli.py
-```
-
-### 2. Direct Parameterized Evaluation
-```bash
-python cli.py --ggo <value> --peripheral <value> --posterior <value> --bilateral <value>
-```
-
-### Parameter Reference
-- `--ggo`: Specifies input measurement or parameter value.
-- `--peripheral`: Specifies input measurement or parameter value.
-- `--posterior`: Specifies input measurement or parameter value.
-- `--bilateral`: Specifies input measurement or parameter value.
-- `--multifocal`: Specifies input measurement or parameter value.
-- `--crazy-paving`: Specifies input measurement or parameter value.
-- `--consolidation`: Specifies input measurement or parameter value.
-- `--consolidation-posterior`: Specifies input measurement or parameter value.
-- `--tree-in-bud`: Specifies input measurement or parameter value.
-- `--cavitation`: Specifies input measurement or parameter value.
-
-### Input Data Schema
-
-| Field | Description | Requirement |
-|:------|:------------|:------------|
-| `case_id` | Parameter / observation metric | Required |
-| `patient_synthetic_id` | Parameter / observation metric | Required |
-| `metric_primary` | Parameter / observation metric | Required |
-| `metric_secondary` | Parameter / observation metric | Required |
-| `is_stat` | Parameter / observation metric | Required |
-| `status_flag` | Parameter / observation metric | Required |
-
----
-
-## 🛡️ Security & Enterprise Architecture
-
-* **Zero-PHI Outbound Interceptor:** Active AST and regex inspection blocking SSNs, MRNs, phone numbers, and patient identifiers.
-* **Tamper-Evident HMAC-SHA256 Audit Trail:** Chained, cryptographically signed logs for every evaluation and state transition.
-* **Air-Gapped LLM Reasoning Adapter:** Agnostic integration for local Ollama instances (`llama3`, `mistral`), Claude 3.5 Sonnet, GPT-4o, and deterministic test mocks.
-* **Active Learning Bayesian Calibration:** Dynamic tracker updating worker reliability weights and monitoring Brier calibration drift.
-* **FastAPI & Prometheus Telemetry:** Exposes OpenAPI 3.1 REST endpoints and operational Prometheus metrics (`/metrics`).
-
----
-
-## 🧪 Testing & Verification
-
-### Prerequisites
-
-Set the `AUDIT_SECRET_KEY` environment variable (required for HMAC-SHA256 audit trail):
+## Python CLI
 
 ```bash
-# Linux/macOS
-export AUDIT_SECRET_KEY=$(python -c "import secrets; print(secrets.token_hex(32))")
-
-# Windows PowerShell
-$env:AUDIT_SECRET_KEY = python -c "import secrets; print(secrets.token_hex(32))"
+python -m pip install .
+corads-chest-ct-agent info
+corads-chest-ct-agent assess --ggo --peripheral --bilateral --multifocal
+corads-chest-ct-agent severity --rum 3 --rmm 4 --rlm 5 --lum 3 --llm 4
 ```
 
-### Run Tests
+JSON output:
 
 ```bash
-pytest -v
+corads-chest-ct-agent assess --ggo --peripheral --bilateral --multifocal --json
 ```
 
-### Execute Simulation Benchmarks
+## Python API
+
+```python
+from corads_chest_ct_agent import ChestCTFindings, assess_corads
+
+findings = ChestCTFindings(
+    ground_glass_opacities=True,
+    ggo_peripheral_distribution=True,
+    ggo_bilateral=True,
+    ggo_multifocal=True,
+)
+
+result = assess_corads(findings)
+print(result.to_dict())
+```
+
+## Optional REST API
 
 ```bash
-python simulator.py 100
+python -m pip install ".[api]"
+uvicorn corads_chest_ct_agent.server:app --host 127.0.0.1 --port 8000
 ```
 
----
+Endpoints:
 
-## 🐳 Container Deployment
+- `GET /health`
+- `POST /api/assess`
+- `GET /docs`
+
+Docker is also supported:
 
 ```bash
 docker build -t corads-chest-ct-agent .
-docker run -p 8000:8000 corads-chest-ct-agent
+docker run --rm -p 8000:8000 corads-chest-ct-agent
 ```
+
+## Development and testing
+
+```bash
+python -m pip install -e ".[api,test]"
+python -m pytest -q
+python -m compileall -q .
+```
+
+The optional legacy `agents/` subsystem uses an in-memory HMAC audit chain. Set `AUDIT_SECRET_KEY` before using that subsystem. Its identifier-pattern guard is a narrow screening utility, **not** a HIPAA de-identification implementation.
+
+## CT severity score
+
+Each lobe is scored 0–5 by estimated involvement:
+
+- 0: none
+- 1: <5%
+- 2: 5–25%
+- 3: 26–50%
+- 4: 51–75%
+- 5: >75%
+
+The five lobar scores are summed to a total from 0 to 25.
+
+## References
+
+- Prokop M, et al. *CO-RADS: A Categorical CT Assessment Scheme for Patients Suspected of Having COVID-19—Definition and Evaluation.* Radiology. 2020;296(2):E97-E104. doi:10.1148/radiol.2020201473.
+- Francone M, et al. *Chest CT score in COVID-19 patients: correlation with disease severity and short-term prognosis.* Eur Radiol. 2020.
+
+## Browser compatibility
+
+The static application uses standard HTML, CSS, and JavaScript and is intended for current versions of Chrome, Edge, Firefox, and Safari.
+
+## License
+
+MIT. See [LICENSE](LICENSE).

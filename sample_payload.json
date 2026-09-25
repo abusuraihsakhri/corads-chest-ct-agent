@@ -1,13 +1,17 @@
 {
-  "case_id": "CASE-2026-8841",
-  "patient_synthetic_id": "SYNTH-PT-9011",
-  "primary_metric": 28.4,
-  "secondary_metric": 16.2,
-  "status_flag": "DISCORDANT",
-  "is_stat": true,
-  "clinical_notes": "Automated supervisory surveillance trigger under ACR Lung-RADS v2022 & Fleischner Society 2017 protocol.",
-  "biomarkers": {
-    "marker_alpha": "ELEVATED",
-    "concordance_score": 0.42
-  }
+  "ground_glass_opacities": true,
+  "ggo_peripheral_distribution": true,
+  "ggo_posterior_distribution": true,
+  "ggo_bilateral": true,
+  "ggo_multifocal": true,
+  "crazy_paving": false,
+  "consolidation": false,
+  "tree_in_bud": false,
+  "cavitation": false,
+  "rt_pcr_positive": false,
+  "right_upper": 2,
+  "right_middle": 2,
+  "right_lower": 3,
+  "left_upper": 2,
+  "left_lower": 3
 }
