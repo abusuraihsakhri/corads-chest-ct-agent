@@ -1,7 +1,15 @@
-"""
-CO-RADS Chest CT Agent: COVID-19 Reporting and Data System for chest CT.
-"""
-__version__ = "2.0.0-PRO"
+"""CO-RADS chest CT structured assessment helpers."""
+__version__ = "2.1.0"
 
 from .models import CORADSLevel, ChestCTFindings, CORADSResult, LobarInvolvement
-from .engine import assess_corads, calculate_severity_score, LEVEL_INFO
+from .engine import LEVEL_INFO, assess_corads, calculate_severity_score
+
+__all__ = [
+    "CORADSLevel",
+    "ChestCTFindings",
+    "CORADSResult",
+    "LobarInvolvement",
+    "LEVEL_INFO",
+    "assess_corads",
+    "calculate_severity_score",
+]
